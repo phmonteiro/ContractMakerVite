@@ -65,7 +65,7 @@ function App() {
   useEffect(() => {
     const fetchClauses = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/clauses'); // This calls your Node.js server
+        const response = await axios.get('https://contract-maker-func.azurewebsites.net/api/getClauses?'); // This calls your Node.js server
         setClauses(response.data);
       } catch (error) {
         console.error('Error fetching clauses:', error);
