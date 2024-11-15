@@ -54,8 +54,8 @@ jobs:
       - name: Clean Azure Web App Storage
         run: |
           az webapp deployment source config-zip \
-            --resource-group YOUR_RESOURCE_GROUP \
-            --name YOUR_WEB_APP_NAME \
+            --resource-group rg-techradar-aut-001 \
+            --name contract-maker-vite \
             --src ""
 
       - name: 'Deploy to Azure Web App'
