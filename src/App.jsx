@@ -9,6 +9,10 @@ import "@blocknote/mantine/style.css";
 import "./styles.css";
 import EditClauseModal from './EditClauseModal';
 import { BlockNoteTest } from "./BlockNoteTest";
+import { saveAs } from "file-saver";
+import mammoth from 'mammoth';
+import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun, UnderlineType } from "docx";
+import ClauseEditor from './ReplaceVariablesModalV2';
 
 function App() {
   /*let clausulas = [
@@ -43,7 +47,8 @@ function App() {
       "ambito": "Geral"
     }
 ]*/
-  const [clauses, setClauses] = useState([]);
+
+const [clauses, setClauses] = useState([]);
   const [filters, setFilters] = useState({
     nome: '',
     tipo: '',
@@ -55,17 +60,12 @@ function App() {
   const editor = useCreateBlockNote({
 
   });
-  
-/*     initialContent: [
-  {
-    type: "paragraph",
-    content: "Cláusula Preliminar Entre  a <*Cedente*>, com sede no <*Morada da Cedente*>, na qualidade de <*Cedente*>, e <*Reinsurer*>, com sede em <*Morada*>, <*Local*>, na qualidade de <*Ressegurador*>, é estabelecido o presente Tratado de Resseguro (o “Tratado”), nos termos e condições constantes das Cláusulas seguintes:",
-  }
-],*/
+
   useEffect(() => {
     const fetchClauses = async () => {
       try {
-        const response = await axios.get('https://contract-maker-func.azurewebsites.net/api/getClauses?'); // This calls your Node.js server
+        //const response = await axios.get('https://contract-maker-func.azurewebsites.net/api/getClauses?'); // This calls your Node.js server
+        const response = await axios.get('http://localhost:5000/api/clauses')
         setClauses(response.data);
       } catch (error) {
         console.error('Error fetching clauses:', error);
@@ -90,11 +90,25 @@ function App() {
   const onClose = (e) => {
     setIsOpen(!isOpen)
   }
+
+  const generateWordTest = async () => {
+    const blocksFromHTML = editor.blocksToFullHTML(blocks);
+    
+     // Convert HTML to Word document
+     const { value: docxContent } = await mammoth.convertToHtml({ html: blocksFromHTML });
+     const blob = new Blob([docxContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+     saveAs(blob, "BlocknoteContent.docx");
+
+  }
   
   return (
     <div>
       <div>
-        <BlockNoteTest />
+        {true && <ClauseEditor />}
+      </div>
+      <div>
+      {false &&<BlockNoteTest />}
       </div>
       {false && 
       <div className={"wrapper"}>
@@ -114,6 +128,7 @@ function App() {
           <code>{JSON.stringify(blocks, null, 1)}</code>
         </pre>
       </div>
+      <div><button onClick={generateWordTest}>log html</button></div>
       {/*<button onClick={updateClauseText}>Update Clause Geral Text</button>*/}
     </div>} 
       <h3 style={{ color: 'red'}}>Contract Maker by Tech Hub</h3>
@@ -154,7 +169,7 @@ function App() {
         />
       </div>
       
-      <ClausesList contractClauses={clauses}
+      <ClausesList ambito={filters.ambito} contractClauses={clauses}
       contractFilters={filters} handleClausesFiltering={handleClausesFiltering}/>
     </div>
 

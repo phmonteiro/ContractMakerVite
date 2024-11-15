@@ -1,44 +1,58 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './Modal.css'; // Add custom styling if needed
 import "@blocknote/core/fonts/inter.css";
-import { useCreateBlockNote, useBlockNote } from "@blocknote/react";
+import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import "./styles.css";
 import axios from 'axios';
+import * as Blocknote from '@blocknote/react';
 
 const EditClauseModal = ({closeModal, isOpen, id, text, nome, versao, ambito, ordem}) => {
 
-    const [test, setTest] = useState({
-        type: "paragraph",
-        content: text ? text : "" // Assuming the BlockNote editor accepts 'content' as plain text
-      })
     const [blocks, setBlocks] = useState([]);
-    const [initialContent, setInitialContent] = useState([{
-        type: "paragraph",
-        content: text ? text : "" // Assuming the BlockNote editor accepts 'content' as plain text
-      }]);
-      const editor = useCreateBlockNote({
-        initialContent: [test]
-      });
+    const editor = useCreateBlockNote({
+        initialContent: [{
+            type: "paragraph",
+            content: text // Assuming the BlockNote editor accepts 'content' as plain text
+        }], 
+    }, [text]);  
+/*     const editor = useCreateBlockNote({
+            initialContent: [{
+                type: "paragraph",
+                content: text // Assuming the BlockNote editor accepts 'content' as plain text
+            }], 
+        }, [text]);  
+        
+        //const editor = useCreateBlockNote({});
+        //useMemo(() => {
+        // text ? editor.replaceBlocks(editor.document, JSON.parse(text)) 
+        //              : null, [text]}
+    //  );
+    useEffect(() => {
+        // Ensure editor and text are initialized before replacing blocks
+        if (editor && text) {
+            editor.replaceBlocks(editor.document, JSON.parse(text)); // JSON.parse(text)
+        }
+    }, [editor, text]); */
 
+    const blocksFromHTML = editor.blocksToFullHTML(blocks);
 
-
-     useEffect(() => {
-        editor.insertBlocks([{
-        type: "paragraph",
-        content: text ? text : ""
-        }], editor.document[0], "after")
-    }, [isOpen])
+      const handleChange = (editor) => {
+        setContent(editor.getJSON());
+      }
 
     const updateClauseText = async () => {
         try {
-          const response = await axios.post('http://localhost:5000/api/updateClauseText', {id: id, texto: JSON.stringify(blocks, null, 0)}); // This calls your Node.js server
             closeModal()
+          const response = await axios.post('http://localhost:5000/api/updateClauseText', // {id: id, texto: JSON.stringify(blocks, null, 0)}); // This calls your Node.js server
+            {id: id, texto: text})
+            
         } catch (error) {
             console.error('Error fetching clauses:', error);
         }
     };
+    
 
     return (
     <>
@@ -48,13 +62,13 @@ const EditClauseModal = ({closeModal, isOpen, id, text, nome, versao, ambito, or
         <div className={"wrapper"}>
             <div>BlockNote Editor:</div>
                 <div className={"item"}>
-                    <BlockNoteView
+                {<BlockNoteView
                     editor={editor}
                     onChange={() => {
                         // Saves the document JSON to state.
                         setBlocks(editor.document);
                     }}
-                    />
+                />}  
                 </div>
             <div>Document JSON:</div>
             <div className={"item bordered"}>

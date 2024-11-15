@@ -11,7 +11,7 @@ const clauses = [
     versao: "proporcional",
     ambito: "geral",
     text:
-      "Entre a <*Cedente*>, com sede no <*Morada da Cedente*>, na qualidade de <*Cedente*>, e <*Reinsurer*>, com sede em <*Morada*>, <*Local*>, na qualidade de <*Ressegurador*>, é estabelecido o presente Tratado de Resseguro (o “Tratado”), nos termos e condições constantes das Cláusulas seguintes:",
+      "Entre a <Cedente>, com sede no <Morada da Cedente>, na qualidade de <Cedente>, e <Reinsurer>, com sede em <Morada>, <Local>, na qualidade de <Ressegurador>, é estabelecido o presente Tratado de Resseguro (o “Tratado”), nos termos e condições constantes das Cláusulas seguintes:",
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ const clauses = [
     tipo: "aceite",
     versao: "proporcional",
     ambito: "geral",
-    text: "Negócio com <*Primeira Empresa*> e também com <*Segunda Empresa*> ",
+    text: "Negócio com <Primeira Empresa> e também com <Segunda Empresa> ",
   },
 ];
 
@@ -83,7 +83,6 @@ const ReplaceVariablesModal = ({closeModal, isOpen}) => {
       return { ...clause, texto: updatedText };
     });
 
-    console.log("Updated Clauses: ", updatedClauses);
     closeModal(); // Close modal after submission
   };
 

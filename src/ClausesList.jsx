@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import GenerateWord from './GenerateWord';
+import GenerateWordTest from './GenerateWordTest';
 import {FaPen} from "react-icons/fa";
 import EditClauseModal from './EditClauseModal';
 import ReplaceVariablesModal from './ReplaceVariablesModal';
 import { MdFindReplace } from "react-icons/md";
+import ClauseEditor from './ReplaceVariablesModalV2';
 
-
-const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering }) => {
+const ClausesList = ({ ambito, contractClauses, contractFilters, handleClausesFiltering }) => {
   const [clauses, setClauses] = useState(contractClauses);
 
   // State to store checkbox states
@@ -26,7 +27,7 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
     );
   }, [contractClauses]);
 
-  const toggleEditClauseModal = (item) => {
+  const toggleEditClauseModal = () => {
     setIsEditModalOpen(!isEditModalOpen)
   }
 
@@ -34,15 +35,11 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
     setSelectedClause(item)
   }
 
-  useEffect(() => {
-    
-  }, [selectedClause])
-
   const toggleReplaceVariablesModal = (item) => {
     setSelectedClause(item)
-    setIsReplaceVariablesModalOpen(!isEditModalOpen)
+    
+    setIsReplaceVariablesModalOpen(!isReplaceVariablesModalOpen)
   }
-  
 
   // Handle checkbox change
   const handleCheckboxChange = (id) => {
@@ -65,7 +62,8 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
 
   return (
     <div>
-      <h2>List of Elements</h2>
+      {ambito && <h1>Contrato {ambito}</h1>}
+      <h2>Lista de Claúsulas</h2>
 
       {/* Main Table */}
       <table>
@@ -95,8 +93,9 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
               <td>{item.versao}</td>
               <td>{item.ambito}</td>
               <td>{item.ordem}</td>
-              <td><button onClick={() => {toggleEditClauseModal(); setEditClauseModalData(item)}}><FaPen />Edit Text</button></td>
-              <td><button onClick={() => toggleReplaceVariablesModal(item)}>< MdFindReplace />Generate Document</button></td>  
+              <td><button onClick={() => {toggleEditClauseModal(); setEditClauseModalData(item)}}><FaPen />Editar texto da cláusula</button></td>
+              <td><button onClick={() => toggleReplaceVariablesModal(item)}>< MdFindReplace />Replace variables Modal</button></td>
+              
             </tr>
           ))) :
           (<tr>
@@ -109,7 +108,7 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
       <EditClauseModal id={selectedClause.id} nome={selectedClause.nome} versao={ selectedClause.versao} ambito={selectedClause.ambito} ordem={selectedClause.ordem} text={selectedClause.texto} closeModal={toggleEditClauseModal} isOpen={isEditModalOpen}/>
       <ReplaceVariablesModal id={selectedClause.id} nome={selectedClause.nome} versao={ selectedClause.versao} ambito={selectedClause.ambito} ordem={selectedClause.ordem} closeModal={toggleReplaceVariablesModal} isOpen={isReplaceVariablesModalOpen}/>
       
-      <h3>Checked Items:</h3>
+      <h3>Cláusulas selecionadas</h3>
 
       {/* Checked Items Table */}
       {Object.values(checkedItems).some((isChecked) => isChecked) ? (
@@ -138,12 +137,22 @@ const ClausesList = ({ contractClauses, contractFilters, handleClausesFiltering 
           </tbody>
         </table>
       ) : (
-        <p>No items selected</p>
+        <p>Nenhuma cláusula selecionada</p>
       )}
 
-    <GenerateWord clauses=
+    {false && <GenerateWord clauses=
             {clauses
-              .filter((item) => checkedItems[item.id])}/>
+              .filter((item) => checkedItems[item.id])}/>}
+
+{/* {Object.values(checkedItems).some((isChecked) => isChecked) ? (
+        <GenerateWordTest clauses = {clauses
+          .filter((item) => checkedItems[item.id])}/>
+      ) : (true)} */}
+      
+      {Object.values(checkedItems).some((isChecked) => isChecked) ? (
+        <ClauseEditor clauses={clauses
+          .filter((item) => checkedItems[item.id])}/>
+      ) : (true)}
     </div>
   );
 
