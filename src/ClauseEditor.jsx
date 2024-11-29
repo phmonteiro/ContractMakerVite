@@ -1,48 +1,33 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Modal from "react-modal";
 import GenerateWordTest from "./GenerateWordTest";
-import { Document, Packer, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun, ImageRun } from "docx";
 import { saveAs } from "file-saver";
 import "./Modal.css"; // Custom CSS for modal styling
-
-// Mock data
-const clausesMock = [
-  {
-    id: 1,
-    nome: "Cláusula Preliminar",
-    tipo: "aceite",
-    versao: "proporcional",
-    ambito: "geral",
-    texto:
-      "Entre a <*Cedente*>, com sede no <*Morada da Cedente*>, na qualidade de <*Cedente*>, e <*Reinsurer*>, com sede em <*Morada*>, <*Local*>, na qualidade de <*Ressegurador*>, é estabelecido o presente Tratado de Resseguro (o “Tratado”), nos termos e condições constantes das Cláusulas seguintes:",
-  },
-  {
-    id: 2,
-    nome: "Cláusula Segunda",
-    tipo: "aceite",
-    versao: "proporcional",
-    ambito: "geral",
-    texto: "Negócio com <*Primeira Empresa*> e também com <*Segunda Empresa*>",
-  },
-];
+import {Buffer} from 'buffer';
+import fidLogo from './assets/logo.png';
 
 // Regular expression to match placeholders like <*text*>
 const placeholderRegex = /<([^<>]+)>/g;
 Modal.setAppElement('#root');
-const ClauseEditor = ({clauses = clausesMock}) => {  
+
+const ClauseEditor = ({clauses}) => {  
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [inputValues, setInputValues] = useState({});
   const [editedClauses, setEditedClauses] = useState(clauses);
-
-
     
+  useEffect(() => {
+    setEditedClauses(clauses);
+  }, [clauses]);
+
   const placeholdersByClause = useMemo(() => {
-    return editedClauses.map((clause) => {
-      const matches = [...clause.texto.matchAll(placeholderRegex)];
-      const placeholders = [...new Set(matches.map((match) => match[1]))];
-      return { clauseId: clause.id, nome: clause.nome, placeholders };
-    });
-  }, [editedClauses]);
+    if (!editedClauses) return [];
+      return editedClauses.map((clause) => {
+        const matches = [...clause.texto.matchAll(placeholderRegex)];
+        const placeholders = [...new Set(matches.map((match) => match[1]))];
+        return { clauseId: clause.id, nome: clause.nome, placeholders };
+      });
+  }, [editedClauses]);  
 
   // Open modal
   const openModal = () => {
@@ -62,22 +47,84 @@ const ClauseEditor = ({clauses = clausesMock}) => {
     });
   };
 
-  const generateDocument = (updatedClauses) => {
+  const fetchImageAsBase64 = async () => {
+    // Convert the imported image to Base64
+    const response = await fetch(fidLogo);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(",")[1]); // Base64 string
+      reader.readAsDataURL(blob);
+    });
+  };
+  
+  const generateDocument = async (updatedClauses) => {
+    const base64Image = await fetchImageAsBase64();
+
     if (updatedClauses && Array.isArray(updatedClauses)) {
       console.log(updatedClauses);
       
-      const paragraphs = updatedClauses.map((item) => [
+/*       const paragraphs = updatedClauses.map((item) => [
         new Paragraph({
           children: [new TextRun({ text: item.nome || 'No name available', bold: true })],
         }),
         new Paragraph(item.texto || 'No text available')
-      ]).flat();
+      ]).flat(); */
+
+      const paragraphs = [];
+
+       clauses.forEach((item) => {
+        // Title paragraph
+        const title = new Paragraph({
+          children: [
+            new TextRun({
+              text: item.nome || 'No name available',
+              bold: true,
+              size: 28, // adjust font size as needed
+            }),
+          ],
+          alignment: "center",
+        });
+
+        paragraphs.push(title);
+        paragraphs.push(new Paragraph({ children: [] }));
+        // Replace escaped '\n' with actual line breaks and split the text into lines
+        const textLines = item.texto.replace(/\\n/g, '\n').split('\n');
+    
+        textLines.forEach((line) => {
+          // Split each line further based on the "1." to "99." pattern
+          const parts = line.split(/(\b\d{1,2}\.\s)/g);
+    
+          const textRuns = parts.map((part, index) => {
+            const isNumberedPattern = /\b\d{1,2}\.\s/.test(part); // Check if it's a numbered pattern
+            return new TextRun({
+              text: part,
+              break: isNumberedPattern && index < parts.length - 1, // Add break if it's a numbered pattern
+            });
+          });
+    
+          // Add the processed line as a new paragraph
+          paragraphs.push(new Paragraph({ children: textRuns }));
+          paragraphs.push(new Paragraph({ children: [] }));
+        });
+      });
+
 
       const doc = new Document({
         sections: [
           {
             properties: {},
-            children: paragraphs,
+            children: [
+               /* new Paragraph({
+                children: [
+                  new ImageRun({
+                    data: Buffer.from(base64Image, "base64"), // Use the Base64 image
+                    transformation: { width: 660, height: 330 },
+                  }),
+                ],
+              }), 
+              ... */...paragraphs,
+            ],
           },
         ],
       });
@@ -91,16 +138,10 @@ const ClauseEditor = ({clauses = clausesMock}) => {
   };
 // Replace placeholders in clause text
 const replacePlaceholders = (text) => {
-  console.log("Original text:", text); // Debugging
-  console.log("Input values:", inputValues); // Debugging
-
   const replacedText = text.replace(placeholderRegex, (match, p1) => {
     const replacement = inputValues[p1];
-    console.log(`Replacing placeholder <${p1}> with: ${replacement || match}`); // Debugging
     return replacement || match; // Use match if no replacement is found
   });
-
-  console.log("Replaced text:", replacedText); // Debugging
   return replacedText;
 };
 
@@ -109,7 +150,6 @@ const replacePlaceholders = (text) => {
     ...clause,
     texto: replacePlaceholders(clause.texto),
   }));
-  console.log(updatedClauses)
   setEditedClauses(updatedClauses);
   return updatedClauses; // Return the updated clauses
 };
@@ -124,10 +164,10 @@ const generateWord = () => {
 
   return (
     <div>
-      <button onClick={openModal}>Edit Clauses</button>
+      <button onClick={openModal}>Manage Selected Clauses</button>
       <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
         <h2>Edit Placeholders</h2>
-        {placeholdersByClause.map(({ clauseId, nome, placeholders }) => (
+        {placeholdersByClause && placeholdersByClause.map(({ clauseId, nome, placeholders }) => (
           <div key={clauseId}>
             <h3>{nome}</h3>
             {placeholders.map((placeholder) => (
@@ -148,7 +188,7 @@ const generateWord = () => {
         <button onClick={generateWord}>Generate Word Document</button>
         <button onClick={closeModal}>Close</button>
       </Modal>
-      <div>
+      {false && <div>
         <h3>Clauses</h3>
         {editedClauses && editedClauses.map((clause) => (
           <div key={clause.id}>
@@ -156,7 +196,7 @@ const generateWord = () => {
             <p>{clause.text}</p>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   );
 };

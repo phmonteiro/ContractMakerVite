@@ -14,6 +14,7 @@
     "@blocknote/mantine": "^0.17.1",
     "@blocknote/react": "^0.17.1",
     "axios": "^1.7.7",
+    "buffer": "^6.0.3",
     "docx": "^9.0.2",
     "file-saver": "^2.0.5",
     "html-docx-js": "^0.3.1",

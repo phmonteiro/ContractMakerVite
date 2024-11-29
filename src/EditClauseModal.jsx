@@ -7,9 +7,10 @@ import "@blocknote/mantine/style.css";
 import "./styles.css";
 import axios from 'axios';
 import * as Blocknote from '@blocknote/react';
+import { useDataContext } from "./context/DataContext.jsx";
 
 const EditClauseModal = ({closeModal, isOpen, id, text, nome, versao, ambito, ordem}) => {
-
+    const {clauses, setClauses, updateRowInState } = useDataContext();
     const [blocks, setBlocks] = useState([]);
     const editor = useCreateBlockNote({
         initialContent: [{
@@ -17,42 +18,58 @@ const EditClauseModal = ({closeModal, isOpen, id, text, nome, versao, ambito, or
             content: text // Assuming the BlockNote editor accepts 'content' as plain text
         }], 
     }, [text]);  
-/*     const editor = useCreateBlockNote({
-            initialContent: [{
-                type: "paragraph",
-                content: text // Assuming the BlockNote editor accepts 'content' as plain text
-            }], 
-        }, [text]);  
-        
-        //const editor = useCreateBlockNote({});
-        //useMemo(() => {
-        // text ? editor.replaceBlocks(editor.document, JSON.parse(text)) 
-        //              : null, [text]}
-    //  );
-    useEffect(() => {
-        // Ensure editor and text are initialized before replacing blocks
-        if (editor && text) {
-            editor.replaceBlocks(editor.document, JSON.parse(text)); // JSON.parse(text)
-        }
-    }, [editor, text]); */
-
+    /*     
+        const editor = useCreateBlockNote({
+                initialContent: [{
+                    type: "paragraph",
+                    content: text // Assuming the BlockNote editor accepts 'content' as plain text
+                }], 
+            }, [text]);  
+            
+            //const editor = useCreateBlockNote({});
+            //useMemo(() => {
+            // text ? editor.replaceBlocks(editor.document, JSON.parse(text)) 
+            //              : null, [text]}
+        //  );
+        useEffect(() => {
+            // Ensure editor and text are initialized before replacing blocks
+            if (editor && text) {
+                editor.replaceBlocks(editor.document, JSON.parse(text)); // JSON.parse(text)
+            }
+        }, [editor, text]); 
+    */
     const blocksFromHTML = editor.blocksToFullHTML(blocks);
+    
+    let newText = ""
+    editor.forEachBlock((block) => {
+        if(block.content[0]) {
+            console.log(block.content[0].text);
+            newText = block.content[0].text;
+        } 
 
-      const handleChange = (editor) => {
-        setContent(editor.getJSON());
-      }
+        
+    });
+
+    const handleChange = (editor) => {
+    setContent(editor.getJSON());
+    }
 
     const updateClauseText = async () => {
+        
+        closeModal()
         try {
-            closeModal()
-          const response = await axios.post('http://localhost:5000/api/updateClauseText', // {id: id, texto: JSON.stringify(blocks, null, 0)}); // This calls your Node.js server
-            {id: id, texto: text})
+            const response = 
+            await axios.post('https://contract-maker-backend-ftp.azurewebsites.net/api/updateClauseText', 
+                {id: id, texto: newText})  
+            updateRowInState({id: id, texto: newText})
             
         } catch (error) {
             console.error('Error fetching clauses:', error);
         }
+
     };
     
+    if (!isOpen) return null;
 
     return (
     <>

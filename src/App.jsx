@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
 import axios from 'axios';
 import ClausesList from './ClausesList';
 import './App.css';
@@ -12,7 +12,8 @@ import { BlockNoteTest } from "./BlockNoteTest";
 import { saveAs } from "file-saver";
 import mammoth from 'mammoth';
 import { AlignmentType, Document, HeadingLevel, Packer, Paragraph, TextRun, UnderlineType } from "docx";
-import ClauseEditor from './ReplaceVariablesModalV2';
+import ClauseEditor from './ClauseEditor.jsx';
+import { DataProvider } from "./context/DataContext.jsx";
 
 function App() {
   /*let clausulas = [
@@ -47,8 +48,6 @@ function App() {
       "ambito": "Geral"
     }
 ]*/
-
-const [clauses, setClauses] = useState([]);
   const [filters, setFilters] = useState({
     nome: '',
     tipo: '',
@@ -58,22 +57,8 @@ const [clauses, setClauses] = useState([]);
   const [isOpen, setIsOpen] = useState(false)
   const [blocks, setBlocks] = useState([]);
   const editor = useCreateBlockNote({
-
+    
   });
-
-  useEffect(() => {
-    const fetchClauses = async () => {
-      try {
-        //const response = await axios.get('https://contract-maker-func.azurewebsites.net/api/getClauses?'); // This calls your Node.js server
-        const response = await axios.get('http://localhost:5000/api/clauses')
-        setClauses(response.data);
-      } catch (error) {
-        console.error('Error fetching clauses:', error);
-      }
-    };
-    fetchClauses();
-  }, []);
-  
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -101,83 +86,80 @@ const [clauses, setClauses] = useState([]);
      saveAs(blob, "BlocknoteContent.docx");
 
   }
-  
+
   return (
-    <div>
+    <DataProvider>
       <div>
-        {true && <ClauseEditor />}
-      </div>
-      <div>
-      {false &&<BlockNoteTest />}
-      </div>
-      {false && 
-      <div className={"wrapper"}>
-      <div>BlockNote Editor:</div>
-      <div className={"item"}>
-        <BlockNoteView
-          editor={editor}
-          onChange={() => {
-            // Saves the document JSON to state.
-            setBlocks(editor.document);
-          }}
-        />
-      </div>
-      <div>Document JSON:</div>
-      <div className={"item bordered"}>
-        <pre>
-          <code>{JSON.stringify(blocks, null, 1)}</code>
-        </pre>
-      </div>
-      <div><button onClick={generateWordTest}>log html</button></div>
-      {/*<button onClick={updateClauseText}>Update Clause Geral Text</button>*/}
-    </div>} 
-      <h3 style={{ color: 'red'}}>Contract Maker by Tech Hub</h3>
-      <div>     
-        Tipo de Contrato
-        <p>
-          <select
-            name="ambito"
-            id="ambito"
-            value={filters.ambito}
+        <div>
+          {true && <ClauseEditor />}
+        </div>
+        <div>
+        {false &&<BlockNoteTest />}
+        </div>
+        {false && 
+        <div className={"wrapper"}>
+        <div>BlockNote Editor:</div>
+        <div className={"item"}>
+          <BlockNoteView
+            editor={editor}
+            onChange={() => {
+              // Saves the document JSON to state.
+              setBlocks(editor.document);
+            }}
+          />
+        </div>
+        <div>Document JSON:</div>
+        <div className={"item bordered"}>
+          <pre>
+            <code>{JSON.stringify(blocks, null, 1)}</code>
+          </pre>
+        </div>
+        <div><button onClick={generateWordTest}>log html</button></div>
+        {/*<button onClick={updateClauseText}>Update Clause Geral Text</button>*/}
+      </div>} 
+        <h3 style={{ color: 'red'}}>Contract Maker by Tech Hub</h3>
+        <div>     
+          Tipo de Contrato
+          <p>
+            <select
+              name="ambito"
+              id="ambito"
+              value={filters.ambito}
+              onChange={handleFilterChange}
+            >
+              <option value="">Selecione o tipo de contrato
+              </option>
+              <option value="Particular">Particular</option>
+              <option value="Geral">Geral</option>
+            </select>
+          </p>
+        </div>
+        <div>
+          <input
+            name="nome"
+            placeholder="Filter by Nome"
+            value={filters.nome}
             onChange={handleFilterChange}
-          >
-            <option value="">Selecione o tipo de contrato
-            </option>
-            <option value="Particular">Particular</option>
-            <option value="Geral">Geral</option>
-          </select>
-        </p>
+          />
+          <input
+            name="tipo"
+            placeholder="Filter by Tipo"
+            value={filters.tipo}
+            onChange={handleFilterChange}
+          />
+          <input
+            name="versao"
+            placeholder="Filter by Versao"
+            value={filters.versao}
+            onChange={handleFilterChange}
+          />
+        </div>
+        
+        <ClausesList ambito={filters.ambito} 
+        contractFilters={filters} handleClausesFiltering={handleClausesFiltering}/>
       </div>
-      <div>
-        <input
-          name="nome"
-          placeholder="Filter by Nome"
-          value={filters.nome}
-          onChange={handleFilterChange}
-        />
-        <input
-          name="tipo"
-          placeholder="Filter by Tipo"
-          value={filters.tipo}
-          onChange={handleFilterChange}
-        />
-        <input
-          name="versao"
-          placeholder="Filter by Versao"
-          value={filters.versao}
-          onChange={handleFilterChange}
-        />
-      </div>
-      
-      <ClausesList ambito={filters.ambito} contractClauses={clauses}
-      contractFilters={filters} handleClausesFiltering={handleClausesFiltering}/>
-    </div>
-
-    
-  );
-
-  
-
+    </DataProvider>
+  )
 }
 
 export default App

@@ -5,11 +5,11 @@ import {FaPen} from "react-icons/fa";
 import EditClauseModal from './EditClauseModal';
 import ReplaceVariablesModal from './ReplaceVariablesModal';
 import { MdFindReplace } from "react-icons/md";
-import ClauseEditor from './ReplaceVariablesModalV2';
+import ClauseEditor from './ClauseEditor.jsx';
+import { useDataContext } from "./context/DataContext.jsx";
 
-const ClausesList = ({ ambito, contractClauses, contractFilters, handleClausesFiltering }) => {
-  const [clauses, setClauses] = useState(contractClauses);
-
+const ClausesList = ({ ambito, contractFilters }) => {
+  const { clauses, setClauses } = useDataContext();
   // State to store checkbox states
   const [checkedItems, setCheckedItems] = useState({});
   const [filteredClauses, setFilteredClauses] = useState([]);
@@ -19,16 +19,33 @@ const ClausesList = ({ ambito, contractClauses, contractFilters, handleClausesFi
 
   // Sync `clauses` and `checkedItems` with `contractClauses` prop when it changes
   useEffect(() => {
-    setClauses(contractClauses);
+    setClauses(clauses);
 
-    // Initialize checked items with false for all clauses when contractClauses changes
+    // Initialize checked items with false for all clauses when clauses changes
     setCheckedItems(
-      contractClauses.reduce((acc, item) => ({ ...acc, [item.id]: false }), {})
+      clauses.reduce((acc, item) => ({ ...acc, [item.id]: false }), {})
     );
-  }, [contractClauses]);
+  }, [clauses]);
+
+  const setAllItemsChecked = () => {
+    setCheckedItems((prevCheckedItems) =>
+      clauses.reduce((acc, item) => {
+        if (item.ambito === contractFilters.ambito) {
+          // Invert the boolean for matching items
+          return { ...acc, [item.id]: !prevCheckedItems[item.id] };
+        }
+        // Keep the previous value for other items
+        return { ...acc, [item.id]: prevCheckedItems[item.id] ?? false };
+      }, {})
+    );
+  }
 
   const toggleEditClauseModal = () => {
-    setIsEditModalOpen(!isEditModalOpen)
+      setIsEditModalOpen((prevState) => {
+      console.log("Modal toggling:", !prevState); // Debugging state
+      return !prevState;
+    });
+    
   }
 
   const setEditClauseModalData = (item) => {
@@ -64,6 +81,7 @@ const ClausesList = ({ ambito, contractClauses, contractFilters, handleClausesFi
     <div>
       {ambito && <h1>Contrato {ambito}</h1>}
       <h2>Lista de Claúsulas</h2>
+      <button onClick={setAllItemsChecked} style={{float: 'left'}}>Select all</button>
 
       {/* Main Table */}
       <table>
@@ -143,12 +161,7 @@ const ClausesList = ({ ambito, contractClauses, contractFilters, handleClausesFi
     {false && <GenerateWord clauses=
             {clauses
               .filter((item) => checkedItems[item.id])}/>}
-
-{/* {Object.values(checkedItems).some((isChecked) => isChecked) ? (
-        <GenerateWordTest clauses = {clauses
-          .filter((item) => checkedItems[item.id])}/>
-      ) : (true)} */}
-      
+     
       {Object.values(checkedItems).some((isChecked) => isChecked) ? (
         <ClauseEditor clauses={clauses
           .filter((item) => checkedItems[item.id])}/>
