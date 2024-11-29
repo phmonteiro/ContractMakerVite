@@ -73,7 +73,7 @@ const ClauseEditor = ({clauses}) => {
 
       const paragraphs = [];
 
-       clauses.forEach((item) => {
+      updatedClauses.forEach((item) => {
         // Title paragraph
         const title = new Paragraph({
           children: [
